@@ -1,0 +1,58 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING, Annotated
+import strawberry
+from sqlalchemy import select
+from app.core.context import Context
+from app.graphql.types.chat_room_type import ChatRoomTypeEnum
+from app.models.chat_room_model import ChatRoomModel
+from app.models.user_model import UserModel
+from datetime import datetime
+
+if TYPE_CHECKING:
+    from .chat_room_type import ChatRoomType
+    from .user_type import UserType
+
+
+@strawberry.type
+class ChatRoomMemberType:
+    id: int
+    chat_room_id: int | None = None
+    user_id: int | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+    @strawberry.field
+    async def chat_room(self, info: strawberry.Info[Context]) -> ChatRoomType:
+        db = info.context.db
+        stmt = select(ChatRoomModel).where(ChatRoomModel.id == self.chat_room_id)
+        result = await db.execute(stmt)
+        chat_room = result.scalars().first()
+        if chat_room is None:
+            raise Exception("Chat room not found")
+        return ChatRoomType(
+            id=chat_room.id,
+            avatar_url= chat_room.avatar_url,
+            chat_room_name= chat_room.chat_room_name,
+            chat_room_type= ChatRoomTypeEnum[chat_room.chat_room_type],
+            created_at=chat_room.created_at,
+            updated_at=chat_room.updated_at,
+        )
+
+    @strawberry.field
+    async def user(self, info: strawberry.Info[Context]) -> UserType:
+        db = info.context.db
+        stmt = select(UserModel).where(UserModel.id == self.user_id)
+        result = await db.execute(stmt)
+        user = result.scalars().first()
+        if user is None:
+            raise Exception("User not found")
+        return UserType(
+            id=user.id,
+            username=user.username,
+            email=user.email,
+            avatar_url=user.avatar_url,
+            class_id=user.class_id,
+            password=user.password,
+            created_at=user.created_at,
+            updated_at=user.updated_at,
+        )

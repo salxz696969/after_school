@@ -1,5 +1,4 @@
 from __future__ import annotations
-import select
 from sqlalchemy import select
 import strawberry
 from datetime import datetime
@@ -35,7 +34,11 @@ class UserType:
     updated_at: datetime | None = None
 
     @strawberry.field
-    async def class_(self, info: strawberry.Info[Context]) -> ClassType:
+    async def class_(self, info: strawberry.Info[Context]) -> Annotated[
+        "ClassType",
+        strawberry.lazy("app.graphql.types.class_type"),
+    ]:
+        from app.graphql.types.class_type import ClassType
         db = info.context.db
         stmt = select(ClassModel).where(ClassModel.id == self.class_id)
         result = await db.execute(stmt)
@@ -53,7 +56,13 @@ class UserType:
         )
 
     @strawberry.field
-    async def assignments(self, info: strawberry.Info[Context]) -> List[AssignmentType]:
+    async def assignments(self, info: strawberry.Info[Context]) -> List[
+        Annotated[
+            "AssignmentType",
+            strawberry.lazy("app.graphql.types.assignment_type"),
+        ]
+    ]:
+        from app.graphql.types.assignment_type import AssignmentType
         db = info.context.db
         stmt = select(AssignmentModel).where(AssignmentModel.user_id == self.id)
         result = await db.execute(stmt)
@@ -71,9 +80,15 @@ class UserType:
         ]
 
     @strawberry.field
-    async def assignment_replies(
-        self, info: strawberry.Info[Context]
-    ) -> List[AssignmentReplyType]:
+    async def assignment_replies(self, info: strawberry.Info[Context]) -> List[
+        Annotated[
+            "AssignmentReplyType",
+            strawberry.lazy(
+                "app.graphql.types.assignment_reply_type"
+            ),
+        ]
+    ]:
+        from app.graphql.types.assignment_reply_type import AssignmentReplyType
         db = info.context.db
         stmt = select(AssignmentReplyModel).where(
             AssignmentReplyModel.user_id == self.id
@@ -94,9 +109,13 @@ class UserType:
         ]
 
     @strawberry.field
-    async def announcements(
-        self, info: strawberry.Info[Context]
-    ) -> List[AnnouncementType]:
+    async def announcements(self, info: strawberry.Info[Context]) -> List[
+        Annotated[
+            "AnnouncementType",
+            strawberry.lazy("app.graphql.types.announcement_type"),
+        ]
+    ]:
+        from app.graphql.types.announcement_type import AnnouncementType
         db = info.context.db
         stmt = select(AnnouncementModel).where(AnnouncementModel.user_id == self.id)
         result = await db.execute(stmt)
@@ -114,7 +133,13 @@ class UserType:
         ]
 
     @strawberry.field
-    async def chats(self, info: strawberry.Info[Context]) -> List[ChatType]:
+    async def chats(self, info: strawberry.Info[Context]) -> List[
+        Annotated[
+            "ChatType",
+            strawberry.lazy("app.graphql.types.chat_type"),
+        ]
+    ]:
+        from app.graphql.types.chat_type import ChatType
         db = info.context.db
         stmt = select(ChatModel).where(ChatModel.user_id == self.id)
         result = await db.execute(stmt)
@@ -131,9 +156,15 @@ class UserType:
         ]
 
     @strawberry.field
-    async def chat_room_members(
-        self, info: strawberry.Info[Context]
-    ) -> List[ChatRoomMemberType]:
+    async def chat_room_members(self, info: strawberry.Info[Context]) -> List[
+        Annotated[
+            "ChatRoomMemberType",
+            strawberry.lazy(
+                "app.graphql.types.chat_room_member_type"
+            ),
+        ]
+    ]:
+        from app.graphql.types.chat_room_member_type import ChatRoomMemberType
         db = info.context.db
         stmt = select(ChatRoomMemberModel).where(ChatRoomMemberModel.user_id == self.id)
         result = await db.execute(stmt)

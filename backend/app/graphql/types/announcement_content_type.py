@@ -22,7 +22,11 @@ class AnnouncementContentType:
     updated_at: datetime | None = None
 
     @strawberry.field
-    async def announcement(self, info: strawberry.Info[Context]) -> AnnouncementType:
+    async def announcement(self, info: strawberry.Info[Context]) -> Annotated[
+        "AnnouncementType",
+        strawberry.lazy("app.graphql.types.announcement_type"),
+    ]:
+        from app.graphql.types.announcement_type import AnnouncementType
         db = info.context.db
         stmt = select(AnnouncementModel).where(
             AnnouncementModel.id == self.announcement_id
@@ -41,7 +45,13 @@ class AnnouncementContentType:
         )
 
     @strawberry.field
-    async def medias(self, info: strawberry.Info[Context]) -> List[MediaType]:
+    async def medias(self, info: strawberry.Info[Context]) -> List[
+        Annotated[
+            "MediaType",
+            strawberry.lazy("app.graphql.types.media_type"),
+        ]
+    ]:
+        from app.graphql.types.media_type import MediaType
         db = info.context.db
         stmt = select(MediaModel).where(MediaModel.announcement_content_id == self.id)
         result = await db.execute(stmt)

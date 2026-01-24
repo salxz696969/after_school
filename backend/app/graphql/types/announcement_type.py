@@ -1,4 +1,5 @@
 from __future__ import annotations
+from re import A
 from app.core.context import Context
 from sqlalchemy import select
 import strawberry
@@ -33,7 +34,12 @@ class AnnouncementType:
     updated_at: datetime | None = None
 
     @strawberry.field
-    async def user(self, info: strawberry.Info[Context]) -> UserType:
+    async def user(
+        self, info: strawberry.Info[Context]
+    ) -> Annotated[
+        "UserType", strawberry.lazy("app.graphql.types.user_type")
+    ]:
+        from app.graphql.types.user_type import UserType
         db = info.context.db
         stmt = select(UserModel).where(UserModel.id == self.user_id)
         result = await db.execute(stmt)
@@ -52,7 +58,12 @@ class AnnouncementType:
         )
 
     @strawberry.field
-    async def class_model(self, info: strawberry.Info[Context]) -> ClassType:
+    async def class_model(
+        self, info: strawberry.Info[Context]
+    ) -> Annotated[
+        "ClassType", strawberry.lazy("app.graphql.types.class_type")
+    ]:
+        from app.graphql.types.class_type import ClassType
         db = info.context.db
         stmt = select(ClassModel).where(ClassModel.id == self.class_id)
         result = await db.execute(stmt)
@@ -70,7 +81,13 @@ class AnnouncementType:
         )
 
     @strawberry.field
-    async def content(self, info: strawberry.Info[Context]) -> AnnouncementContentType:
+    async def content(self, info: strawberry.Info[Context]) -> Annotated[
+        "AnnouncementContentType",
+        strawberry.lazy(
+            "app.graphql.types.announcement_content_type"
+        ),
+    ]:
+        from app.graphql.types.announcement_content_type import AnnouncementContentType
         db = info.context.db
         stmt = select(AnnouncementContentModel).where(
             AnnouncementContentModel.announcement_id == self.id

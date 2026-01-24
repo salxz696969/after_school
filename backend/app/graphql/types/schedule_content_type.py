@@ -20,7 +20,11 @@ class ScheduleContentType:
     updated_at: datetime | None = None
 
     @strawberry.field
-    async def schedule(self, info: strawberry.Info[Context]) -> ScheduleType:
+    async def schedule(self, info: strawberry.Info[Context]) -> Annotated[
+        "ScheduleType",
+        strawberry.lazy("app.graphql.types.schedule_type"),
+    ]:
+        from app.graphql.types.schedule_type import ScheduleType
         db = info.context.db
         stmt = select(ScheduleModel).where(ScheduleModel.id == self.schedule_id)
         result = await db.execute(stmt)
@@ -35,7 +39,13 @@ class ScheduleContentType:
         )
 
     @strawberry.field
-    async def medias(self, info: strawberry.Info[Context]) -> List[MediaType]:
+    async def medias(self, info: strawberry.Info[Context]) -> List[
+        Annotated[
+            "MediaType",
+            strawberry.lazy("app.graphql.types.media_type"),
+        ]
+    ]:
+        from app.graphql.types.media_type import MediaType
         db = info.context.db
         stmt = select(MediaModel).where(MediaModel.schedule_content_id == self.id)
         result = await db.execute(stmt)

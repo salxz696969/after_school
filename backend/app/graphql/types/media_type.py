@@ -31,9 +31,11 @@ class MediaType:
     updated_at: datetime | None = None
 
     @strawberry.field
-    async def chat_content(
-        self, info: strawberry.Info[Context]
-    ) -> ChatContentType:
+    async def chat_content(self, info: strawberry.Info[Context]) -> Annotated[
+        "ChatContentType",
+        strawberry.lazy("app.graphql.types.chat_content_type"),
+    ]:
+        from app.graphql.types.chat_content_type import ChatContentType
         db = info.context.db
         stmt = select(ChatContentModel).where(
             ChatContentModel.id == self.chat_content_id
@@ -50,9 +52,11 @@ class MediaType:
         )
 
     @strawberry.field
-    async def schedule_content(
-        self, info: strawberry.Info[Context]
-    ) -> ScheduleContentType:
+    async def schedule_content(self, info: strawberry.Info[Context]) -> Annotated[
+        "ScheduleContentType",
+        strawberry.lazy("app.graphql.types.schedule_content_type"),
+    ]:
+        from app.graphql.types.schedule_content_type import ScheduleContentType
         db = info.context.db
         stmt = select(ScheduleContentModel).where(
             ScheduleContentModel.id == self.schedule_content_id
@@ -69,9 +73,13 @@ class MediaType:
         )
 
     @strawberry.field
-    async def announcement_content(
-        self, info: strawberry.Info[Context]
-    ) -> AnnouncementContentType:
+    async def announcement_content(self, info: strawberry.Info[Context]) -> Annotated[
+        "AnnouncementContentType",
+        strawberry.lazy(
+            "app.graphql.types.announcement_content_type"
+        ),
+    ]:
+        from app.graphql.types.announcement_content_type import AnnouncementContentType
         db = info.context.db
         stmt = select(AnnouncementContentModel).where(
             AnnouncementContentModel.id == self.announcement_content_id
@@ -82,16 +90,19 @@ class MediaType:
             raise Exception("Announcement Content not found")
         return AnnouncementContentType(
             id=announcement_content.id,
-
             announcement_id=announcement_content.announcement_id,
             created_at=announcement_content.created_at,
             updated_at=announcement_content.updated_at,
         )
 
     @strawberry.field
-    async def assignment_content(
-        self, info: strawberry.Info[Context]
-    ) -> AssignmentContentType:
+    async def assignment_content(self, info: strawberry.Info[Context]) -> Annotated[
+        "AssignmentContentType",
+        strawberry.lazy(
+            "app.graphql.types.assignment_content_type"
+        ),
+    ]:
+        from app.graphql.types.assignment_content_type import AssignmentContentType
         db = info.context.db
         stmt = select(AssignmentContentModel).where(
             AssignmentContentModel.id == self.assignment_content_id
@@ -110,7 +121,13 @@ class MediaType:
     @strawberry.field
     async def assignment_reply_content(
         self, info: strawberry.Info[Context]
-    ) -> AssignmentReplyContentType:
+    ) -> Annotated[
+        "AssignmentReplyContentType",
+        strawberry.lazy(
+            "app.graphql.types.assignment_reply_content_type"
+        ),
+    ]:
+        from app.graphql.types.assignment_reply_content_type import AssignmentReplyContentType
         db = info.context.db
         stmt = select(AssignmentReplyContentModel).where(
             AssignmentReplyContentModel.id == self.assignment_reply_content_id

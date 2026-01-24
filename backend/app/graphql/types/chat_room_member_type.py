@@ -22,7 +22,11 @@ class ChatRoomMemberType:
     updated_at: datetime | None = None
 
     @strawberry.field
-    async def chat_room(self, info: strawberry.Info[Context]) -> ChatRoomType:
+    async def chat_room(self, info: strawberry.Info[Context]) -> Annotated[
+        "ChatRoomType",
+        strawberry.lazy("app.graphql.types.chat_room_type"),
+    ]:
+        from app.graphql.types.chat_room_type import ChatRoomType
         db = info.context.db
         stmt = select(ChatRoomModel).where(ChatRoomModel.id == self.chat_room_id)
         result = await db.execute(stmt)
@@ -39,7 +43,11 @@ class ChatRoomMemberType:
         )
 
     @strawberry.field
-    async def user(self, info: strawberry.Info[Context]) -> UserType:
+    async def user(self, info: strawberry.Info[Context]) -> Annotated[
+        "UserType",
+        strawberry.lazy("app.graphql.types.user_type"),
+    ]:
+        from app.graphql.types.user_type import UserType
         db = info.context.db
         stmt = select(UserModel).where(UserModel.id == self.user_id)
         result = await db.execute(stmt)

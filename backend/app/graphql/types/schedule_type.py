@@ -5,6 +5,7 @@ from datetime import datetime
 from sqlalchemy import select
 from app.core.context import Context
 from app.models.class_model import ClassModel
+from app.models.schedule_content_model import ScheduleContentModel
 from app.models.schedule_model import ScheduleModel
 
 if TYPE_CHECKING:
@@ -20,7 +21,10 @@ class ScheduleType:
     updated_at: datetime | None = None
 
     @strawberry.field
-    async def class_model(self, info: strawberry.Info[Context]) -> ClassType:
+    async def class_model(self, info: strawberry.Info[Context]) -> Annotated[
+        "ClassType",
+        strawberry.lazy("app.graphql.types.class_type"),
+    ]:
         db = info.context.db
         stmt = select(ClassModel).where(ClassModel.id == self.class_id)
         result = await db.execute(stmt)
@@ -38,9 +42,15 @@ class ScheduleType:
         )
 
     @strawberry.field
-    async def content(self, info: strawberry.Info[Context]) -> ScheduleContentType:
+    async def content(self, info: strawberry.Info[Context]) -> Annotated[
+        "ScheduleContentType",
+        strawberry.lazy("app.graphql.types.schedule_content_type"),
+    ]:
+        from app.graphql.types.schedule_content_type import ScheduleContentType
         db = info.context.db
-        stmt = select(ScheduleContentType).where(ScheduleModel.id == self.id)
+        stmt = select(ScheduleContentModel).where(
+            ScheduleContentModel.schedule_id == self.id
+        )
         result = await db.execute(stmt)
         content = result.scalars().first()
         if content is None:

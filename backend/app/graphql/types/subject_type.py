@@ -21,7 +21,11 @@ class SubjectType:
     updated_at: datetime | None = None
 
     @strawberry.field
-    async def class_model(self, info: strawberry.Info[Context]) -> ClassType:
+    async def class_model(self, info: strawberry.Info[Context]) -> Annotated[
+        "ClassType",
+        strawberry.lazy("app.graphql.types.class_type"),
+    ]:
+        from app.graphql.types.class_type import ClassType
         db = info.context.db
         stmt = select(ClassModel).where(ClassModel.id == self.class_id)
         result = await db.execute(stmt)
@@ -39,7 +43,13 @@ class SubjectType:
         )
 
     @strawberry.field
-    async def assignments(self, info: strawberry.Info[Context]) -> List[AssignmentType]:
+    async def assignments(self, info: strawberry.Info[Context]) -> List[
+        Annotated[
+            "AssignmentType",
+            strawberry.lazy("app.graphql.types.assignment_type"),
+        ]
+    ]:
+        from app.graphql.types.assignment_type import AssignmentType
         db = info.context.db
         stmt = select(AssignmentModel).where(AssignmentModel.subject_id == self.id)
         result = await db.execute(stmt)

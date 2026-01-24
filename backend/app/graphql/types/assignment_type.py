@@ -28,7 +28,11 @@ class AssignmentType:
     updated_at: datetime | None = None
 
     @strawberry.field
-    async def user(self, info: strawberry.Info[Context]) -> UserType:
+    async def user(self, info: strawberry.Info[Context]) -> Annotated[
+        "UserType",
+        strawberry.lazy("app.graphql.types.user_type"),
+    ]:
+        from app.graphql.types.user_type import UserType
         db = info.context.db
         stmt = select(UserModel).where(UserModel.id == self.user_id)
         result = await db.execute(stmt)
@@ -47,7 +51,11 @@ class AssignmentType:
         )
 
     @strawberry.field
-    async def subject(self, info: strawberry.Info[Context]) -> SubjectType:
+    async def subject(self, info: strawberry.Info[Context]) -> Annotated[
+        "SubjectType",
+        strawberry.lazy("app.graphql.types.subject_type"),
+    ]:
+        from app.graphql.types.subject_type import SubjectType
         db = info.context.db
         stmt = select(SubjectModel).where(SubjectModel.id == self.subject_id)
         result = await db.execute(stmt)
@@ -63,7 +71,10 @@ class AssignmentType:
         )
 
     @strawberry.field
-    async def class_model(self, info: strawberry.Info[Context]) -> ClassType:
+    async def class_model(self, info: strawberry.Info[Context]) -> Annotated[
+        "ClassType",
+        strawberry.lazy("app.graphql.types.class_type"),
+    ]:
         db = info.context.db
         stmt = select(ClassModel).where(ClassModel.id == self.class_id)
         result = await db.execute(stmt)
@@ -78,9 +89,13 @@ class AssignmentType:
         )
 
     @strawberry.field
-    async def replies(
-        self, info: strawberry.Info[Context]
-    ) -> List[AssignmentReplyType]:
+    async def replies(self, info: strawberry.Info[Context]) -> List[
+        Annotated[
+            "AssignmentReplyType",
+            strawberry.lazy("app.graphql.types.assignment_reply_type"),
+        ]
+    ]:
+        from app.graphql.types.assignment_reply_type import AssignmentReplyType
         db = info.context.db
         stmt = select(AssignmentReplyModel).where(
             AssignmentReplyModel.assignment_id == self.id
@@ -101,7 +116,13 @@ class AssignmentType:
         ]
 
     @strawberry.field
-    async def content(self, info: strawberry.Info[Context]) -> AssignmentContentType:
+    async def content(self, info: strawberry.Info[Context]) -> Annotated[
+        "AssignmentContentType",
+        strawberry.lazy(
+            "app.graphql.types.assignment_content_type"
+        ),
+    ]:
+        from app.graphql.types.assignment_content_type import AssignmentContentType
         db = info.context.db
         stmt = select(AssignmentContentModel).where(
             AssignmentContentModel.assignment_id == self.id

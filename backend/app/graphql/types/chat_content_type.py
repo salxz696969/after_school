@@ -20,7 +20,11 @@ class ChatContentType:
     updated_at: datetime | None = None
 
     @strawberry.field
-    async def chat(self, info: strawberry.Info[Context]) -> ChatType:
+    async def chat(self, info: strawberry.Info[Context]) -> Annotated[
+        "ChatType",
+        strawberry.lazy("app.graphql.types.chat_type"),
+    ]:
+        from app.graphql.types.chat_type import ChatType
         db = info.context.db
         stmt = select(ChatModel).where(ChatModel.id == self.chat_id)
         result = await db.execute(stmt)
@@ -36,7 +40,13 @@ class ChatContentType:
         )
 
     @strawberry.field
-    async def medias(self, info: strawberry.Info[Context]) -> List[MediaType]:
+    async def medias(self, info: strawberry.Info[Context]) -> List[
+        Annotated[
+            "MediaType",
+            strawberry.lazy("app.graphql.types.media_type"),
+        ]
+    ]:
+        from app.graphql.types.media_type import MediaType
         db = info.context.db
         stmt = select(MediaModel).where(MediaModel.chat_content_id == self.id)
         result = await db.execute(stmt)

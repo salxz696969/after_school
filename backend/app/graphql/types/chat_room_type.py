@@ -2,7 +2,7 @@ from __future__ import annotations
 import enum
 import strawberry
 from datetime import datetime
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Annotated
 from app.core.context import Context
 from sqlalchemy import select
 from app.models.chat_model import ChatModel
@@ -29,7 +29,13 @@ class ChatRoomType:
     updated_at: datetime | None = None
 
     @strawberry.field
-    async def chats(self, info: strawberry.Info[Context]) -> List[ChatType]:
+    async def chats(self, info: strawberry.Info[Context]) -> List[
+        Annotated[
+            "ChatType",
+            strawberry.lazy("app.graphql.types.chat_type"),
+        ]
+    ]:
+        from app.graphql.types.chat_type import ChatType
         db = info.context.db
         stmt = select(ChatModel).where(ChatModel.chat_room_id == self.id)
         result = await db.execute(stmt)
@@ -46,7 +52,13 @@ class ChatRoomType:
         ]
 
     @strawberry.field
-    async def members(self, info: strawberry.Info[Context]) -> List[ChatRoomMemberType]:
+    async def members(self, info: strawberry.Info[Context]) -> List[
+        Annotated[
+            "ChatRoomMemberType",
+            strawberry.lazy("app.graphql.types.chat_room_member_type"),
+        ]
+    ]:
+        from app.graphql.types.chat_room_member_type import ChatRoomMemberType
         db = info.context.db
         stmt = select(ChatRoomMemberModel).where(
             ChatRoomMemberModel.chat_room_id == self.id

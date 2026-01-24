@@ -21,7 +21,11 @@ class AssignmentContentType:
     updated_at: datetime | None = None
 
     @strawberry.field
-    async def assignment(self, info: strawberry.Info[Context]) -> AssignmentType:
+    async def assignment(self, info: strawberry.Info[Context]) -> Annotated[
+        "AssignmentType",
+        strawberry.lazy("app.graphql.types.assignment_type"),
+    ]:
+        from app.graphql.types.assignment_type import AssignmentType
         db = info.context.db
         stmt = select(AssignmentModel).where(AssignmentModel.id == self.assignment_id)
         result = await db.execute(stmt)
@@ -38,7 +42,13 @@ class AssignmentContentType:
         )
 
     @strawberry.field
-    async def medias(self, info: strawberry.Info[Context]) -> List[MediaType]:
+    async def medias(self, info: strawberry.Info[Context]) -> List[
+        Annotated[
+            "MediaType",
+            strawberry.lazy("app.graphql.types.media_type"),
+        ]
+    ]:
+        from app.graphql.types.media_type import MediaType
         db = info.context.db
         stmt = select(MediaModel).where(MediaModel.assignment_content_id == self.id)
         result = await db.execute(stmt)

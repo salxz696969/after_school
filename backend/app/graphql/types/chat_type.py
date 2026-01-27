@@ -1,7 +1,7 @@
 from __future__ import annotations
 import strawberry
 from datetime import datetime
-from typing import Annotated, List, Optional
+from typing import Annotated, List
 from typing import TYPE_CHECKING
 from app.core.context import Context
 from app.graphql.types.chat_room_type import ChatRoomTypeEnum

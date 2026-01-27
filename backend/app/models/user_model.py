@@ -33,7 +33,7 @@ class UserModel(Base):
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
-    class_model: Mapped["ClassModel"] = relationship(
+    class_: Mapped["ClassModel"] = relationship(
         "ClassModel", back_populates="users"
     )
     assignments: Mapped[list["AssignmentModel"]] = relationship(

@@ -54,7 +54,7 @@ class SubjectType:
         stmt = select(AssignmentModel).where(AssignmentModel.subject_id == self.id)
         result = await db.execute(stmt)
         assignments = result.scalars().all()
-        if assignments is None:
+        if not assignments:
             raise Exception("No assignments found")
         return [
             AssignmentType(

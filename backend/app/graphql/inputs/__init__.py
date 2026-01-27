@@ -41,7 +41,6 @@ from .chat_room_input import (
 )
 from .chat_room_member_input import (
     CreateChatRoomMemberInput,
-    UpdateChatRoomMemberInput,
     DeleteChatRoomMemberInput,
 )
 from .class_input import CreateClassInput, UpdateClassInput, DeleteClassInput
@@ -84,7 +83,6 @@ __all__ = [
     "UpdateChatRoomInput",
     "DeleteChatRoomInput",
     "CreateChatRoomMemberInput",
-    "UpdateChatRoomMemberInput",
     "DeleteChatRoomMemberInput",
     "CreateClassInput",
     "UpdateClassInput",

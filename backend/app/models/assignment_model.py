@@ -39,7 +39,7 @@ class AssignmentModel(Base):
     subject: Mapped["SubjectModel"] = relationship(
         "SubjectModel", back_populates="assignments"
     )
-    class_model: Mapped["ClassModel"] = relationship(
+    class_: Mapped["ClassModel"] = relationship(
         "ClassModel", back_populates="assignments"
     )
     replies: Mapped[list["AssignmentReplyModel"]] = relationship(

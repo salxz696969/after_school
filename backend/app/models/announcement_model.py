@@ -42,7 +42,7 @@ class AnnouncementModel(Base):
     user: Mapped["UserModel"] = relationship(
         "UserModel", back_populates="announcements"
     )
-    class_model: Mapped["ClassModel"] = relationship(
+    class_: Mapped["ClassModel"] = relationship(
         "ClassModel", back_populates="announcements"
     )
 

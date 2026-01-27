@@ -1,7 +1,7 @@
 from __future__ import annotations
 import strawberry
 from datetime import datetime
-from typing import TYPE_CHECKING, Annotated, List, Optional
+from typing import TYPE_CHECKING, Annotated, List
 from sqlalchemy import select
 from app.core.context import Context
 from app.models.schedule_model import ScheduleModel

@@ -1,7 +1,7 @@
 from __future__ import annotations
 import strawberry
 from datetime import datetime
-from typing import TYPE_CHECKING, Annotated, Optional
+from typing import TYPE_CHECKING, Annotated
 from app.core.context import Context
 from app.models.chat_content_model import ChatContentModel
 from app.models.schedule_content_model import ScheduleContentModel

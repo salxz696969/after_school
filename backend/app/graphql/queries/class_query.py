@@ -6,7 +6,6 @@ from strawberry.types import Info
 from app.core.context import Context
 from app.graphql.types.class_type import ClassType
 from app.models.class_model import ClassModel
-import logging
 
 
 @strawberry.type

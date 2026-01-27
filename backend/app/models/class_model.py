@@ -31,17 +31,17 @@ class ClassModel(Base):
     )
 
     users: Mapped[list["UserModel"]] = relationship(
-        "UserModel", back_populates="class_model"
+        "UserModel", back_populates="class_"
     )
     subjects: Mapped[list["SubjectModel"]] = relationship(
-        "SubjectModel", back_populates="class_model"
+        "SubjectModel", back_populates="class_"
     )
     assignments: Mapped[list["AssignmentModel"]] = relationship(
-        "AssignmentModel", back_populates="class_model"
+        "AssignmentModel", back_populates="class_"
     )
     schedules: Mapped[list["ScheduleModel"]] = relationship(
-        "ScheduleModel", back_populates="class_model"
+        "ScheduleModel", back_populates="class_"
     )
     announcements: Mapped[list["AnnouncementModel"]] = relationship(
-        "AnnouncementModel", back_populates="class_model"
+        "AnnouncementModel", back_populates="class_"
     )

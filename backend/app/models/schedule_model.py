@@ -24,7 +24,7 @@ class ScheduleModel(Base):
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
     )
-    class_model: Mapped["ClassModel"] = relationship(
+    class_: Mapped["ClassModel"] = relationship(
         "ClassModel", back_populates="schedules"
     )
     content: Mapped["ScheduleContentModel"] = relationship(

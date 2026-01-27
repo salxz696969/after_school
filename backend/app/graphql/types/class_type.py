@@ -8,7 +8,6 @@ from app.core.context import Context
 from app.models.announcement_model import AnnouncementModel
 from app.models.assignment_model import AssignmentModel
 from app.models.schedule_model import ScheduleModel
-from app.models.subject_model import SubjectModel
 from app.models.user_model import UserModel
 
 if TYPE_CHECKING:
@@ -37,6 +36,7 @@ class ClassType:
         ]
     ]:
         from app.graphql.types.user_type import UserType
+
         db = info.context.db
         stmt = select(UserModel).where(UserModel.class_id == self.id)
         result = await db.execute(stmt)
@@ -63,10 +63,10 @@ class ClassType:
         ]
     ]:
         from app.graphql.types.subject_type import SubjectType
-        db = info.context.db
-        stmt = select(SubjectModel).where(SubjectModel.class_id == self.id)
-        result = await db.execute(stmt)
-        subjects = result.scalars().all()
+
+        subjects = await info.context.class_loader.subject_loader.load(self.id)
+        if not subjects:
+            return []
         return [
             SubjectType(
                 id=subject.id,
@@ -86,6 +86,7 @@ class ClassType:
         ]
     ]:
         from app.graphql.types.assignment_type import AssignmentType
+
         db = info.context.db
         stmt = select(AssignmentModel).where(AssignmentModel.class_id == self.id)
         result = await db.execute(stmt)
@@ -110,6 +111,7 @@ class ClassType:
         ]
     ]:
         from app.graphql.types.schedule_type import ScheduleType
+
         db = info.context.db
         stmt = select(ScheduleModel).where(ScheduleModel.class_id == self.id)
         result = await db.execute(stmt)
@@ -132,6 +134,7 @@ class ClassType:
         ]
     ]:
         from app.graphql.types.announcement_type import AnnouncementType
+
         db = info.context.db
         stmt = select(AnnouncementModel).where(AnnouncementModel.class_id == self.id)
         result = await db.execute(stmt)

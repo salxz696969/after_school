@@ -1,12 +1,11 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Annotated, Optional
+from typing import TYPE_CHECKING, Annotated
 import strawberry
 from datetime import datetime
 from sqlalchemy import select
 from app.core.context import Context
 from app.models.class_model import ClassModel
 from app.models.schedule_content_model import ScheduleContentModel
-from app.models.schedule_model import ScheduleModel
 
 if TYPE_CHECKING:
     from .class_type import ClassType

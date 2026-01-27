@@ -1,14 +1,12 @@
 from __future__ import annotations
-from re import A
 from app.core.context import Context
 from sqlalchemy import select
 import strawberry
 from datetime import datetime
 import enum
-from typing import TYPE_CHECKING, Annotated, Optional
+from typing import TYPE_CHECKING, Annotated
 
 from app.models.announcement_content_model import AnnouncementContentModel
-from app.models.announcement_model import AnnouncementModel
 from app.models.class_model import ClassModel
 from app.models.user_model import UserModel
 

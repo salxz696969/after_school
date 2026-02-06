@@ -1,7 +1,7 @@
 from __future__ import annotations
 import enum
 from typing import TYPE_CHECKING
-from sqlalchemy import DateTime, Integer, ForeignKey, Enum
+from sqlalchemy import DateTime, Integer, ForeignKey, String
 from datetime import datetime, timezone
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.orm import relationship
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from .announcement_content_model import AnnouncementContentModel
 
 
-class AnnouncementType(str, enum.Enum):
+class AnnouncementTypeStatus(str, enum.Enum):
     GENERAL = "general"
     LEAKS = "leaks"
 
@@ -29,7 +29,7 @@ class AnnouncementModel(Base):
         ForeignKey("classes.id", ondelete="set null"), nullable=True
     )
     type: Mapped[str] = mapped_column(
-        Enum(AnnouncementType), default=AnnouncementType.GENERAL, nullable=False
+        String, nullable=False
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)

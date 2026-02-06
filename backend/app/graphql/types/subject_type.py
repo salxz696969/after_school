@@ -2,10 +2,8 @@ from __future__ import annotations
 import strawberry
 from datetime import datetime
 from typing import TYPE_CHECKING, Annotated, List
-from sqlalchemy import select
 from app.core.context import Context
-from app.models.assignment_model import AssignmentModel
-from app.models.class_model import ClassModel
+from app.utils import extract_fields
 
 if TYPE_CHECKING:
     from .class_type import ClassType
@@ -21,49 +19,19 @@ class SubjectType:
     updated_at: datetime | None = None
 
     @strawberry.field
-    async def class_model(self, info: strawberry.Info[Context]) -> Annotated[
+    def class_model(self, info: strawberry.Info[Context]) -> Annotated[
         "ClassType",
         strawberry.lazy("app.graphql.types.class_type"),
     ]:
-        from app.graphql.types.class_type import ClassType
-        db = info.context.db
-        stmt = select(ClassModel).where(ClassModel.id == self.class_id)
-        result = await db.execute(stmt)
-        class_instance = result.scalars().first()
-        if class_instance is None:
-            raise Exception("Class not found")
-        return ClassType(
-            id=class_instance.id,
-            speciality=class_instance.speciality,
-            major=class_instance.major,
-            group_name=class_instance.group_name,
-            generation=class_instance.generation,
-            created_at=class_instance.created_at,
-            updated_at=class_instance.updated_at,
-        )
+        fields = extract_fields(info)
+        return info.context.subject_loader.class_loader.load((self.id, tuple(fields)))  # type: ignore
 
     @strawberry.field
-    async def assignments(self, info: strawberry.Info[Context]) -> List[
+    def assignments(self, info: strawberry.Info[Context]) -> List[
         Annotated[
             "AssignmentType",
             strawberry.lazy("app.graphql.types.assignment_type"),
         ]
     ]:
-        from app.graphql.types.assignment_type import AssignmentType
-        db = info.context.db
-        stmt = select(AssignmentModel).where(AssignmentModel.subject_id == self.id)
-        result = await db.execute(stmt)
-        assignments = result.scalars().all()
-        if not assignments:
-            raise Exception("No assignments found")
-        return [
-            AssignmentType(
-                id=assignment.id,
-                subject_id=assignment.subject_id,
-                class_id=assignment.class_id,
-                user_id=assignment.user_id,
-                created_at=assignment.created_at,
-                updated_at=assignment.updated_at,
-            )
-            for assignment in assignments
-        ]
+        fields = extract_fields(info)
+        return info.context.subject_loader.assignment_loader.load((self.id, tuple(fields)))  # type: ignore

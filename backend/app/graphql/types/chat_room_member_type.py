@@ -1,12 +1,10 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Annotated
 import strawberry
-from sqlalchemy import select
 from app.core.context import Context
-from app.graphql.types.chat_room_type import ChatRoomTypeEnum
-from app.models.chat_room_model import ChatRoomModel
-from app.models.user_model import UserModel
 from datetime import datetime
+
+from app.utils import extract_fields
 
 if TYPE_CHECKING:
     from .chat_room_type import ChatRoomType
@@ -22,45 +20,17 @@ class ChatRoomMemberType:
     updated_at: datetime | None = None
 
     @strawberry.field
-    async def chat_room(self, info: strawberry.Info[Context]) -> Annotated[
+    def chat_room(self, info: strawberry.Info[Context]) -> Annotated[
         "ChatRoomType",
         strawberry.lazy("app.graphql.types.chat_room_type"),
     ]:
-        from app.graphql.types.chat_room_type import ChatRoomType
-        db = info.context.db
-        stmt = select(ChatRoomModel).where(ChatRoomModel.id == self.chat_room_id)
-        result = await db.execute(stmt)
-        chat_room = result.scalars().first()
-        if chat_room is None:
-            raise Exception("Chat room not found")
-        return ChatRoomType(
-            id=chat_room.id,
-            avatar_url= chat_room.avatar_url,
-            chat_room_name= chat_room.chat_room_name,
-            chat_room_type= ChatRoomTypeEnum[chat_room.chat_room_type],
-            created_at=chat_room.created_at,
-            updated_at=chat_room.updated_at,
-        )
+        fields = extract_fields(info)
+        return info.context.chat_room_member_loader.chat_room_loader.load((self.id, tuple(fields)))  # type: ignore
 
     @strawberry.field
-    async def user(self, info: strawberry.Info[Context]) -> Annotated[
+    def user(self, info: strawberry.Info[Context]) -> Annotated[
         "UserType",
         strawberry.lazy("app.graphql.types.user_type"),
     ]:
-        from app.graphql.types.user_type import UserType
-        db = info.context.db
-        stmt = select(UserModel).where(UserModel.id == self.user_id)
-        result = await db.execute(stmt)
-        user = result.scalars().first()
-        if user is None:
-            raise Exception("User not found")
-        return UserType(
-            id=user.id,
-            username=user.username,
-            email=user.email,
-            avatar_url=user.avatar_url,
-            class_id=user.class_id,
-            password=user.password,
-            created_at=user.created_at,
-            updated_at=user.updated_at,
-        )
+        fields = extract_fields(info)
+        return info.context.chat_room_member_loader.user_loader.load((self.id, tuple(fields)))  # type: ignore

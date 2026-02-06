@@ -1,7 +1,7 @@
 from __future__ import annotations
 import enum
 from typing import TYPE_CHECKING
-from sqlalchemy import DateTime, Integer, String, Enum
+from sqlalchemy import DateTime, Integer, String
 from datetime import datetime, timezone
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
@@ -21,7 +21,7 @@ class ChatRoomModel(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     chat_room_type: Mapped[ChatRoomType] = mapped_column(
-        Enum(ChatRoomType), nullable=False
+        String, nullable=False
     )
     chat_room_name: Mapped[str | None] = mapped_column(String, nullable=True)
     avatar_url: Mapped[str] = mapped_column(String, nullable=True)

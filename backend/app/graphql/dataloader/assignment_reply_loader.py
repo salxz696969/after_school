@@ -7,55 +7,66 @@ from app.models.assignment_reply_content_model import AssignmentReplyContentMode
 from sqlalchemy.ext.asyncio import AsyncSession
 from strawberry.dataloader import DataLoader
 
+from app.utils.get_column import get_assignment_columns, get_assignment_reply_content_columns, get_user_columns
+
 
 class AssignmentReplyLoader:
     def __init__(self, db: AsyncSession):
         self.db = db
-        self.assignment_loader: DataLoader[int, Optional[AssignmentModel]] = DataLoader(
-            load_fn=lambda ids: self._load_assignments(ids, db)
-        )
-        self.user_loader: DataLoader[int, Optional[UserModel]] = DataLoader(
-            load_fn=lambda ids: self._load_users(ids, db)
-        )
+        self.assignment_loader: DataLoader[
+            tuple[int, tuple[str, ...]], Optional[AssignmentModel]
+        ] = DataLoader(load_fn=self._load_assignments)
+        self.user_loader: DataLoader[
+            tuple[int, tuple[str, ...]], Optional[UserModel]
+        ] = DataLoader(load_fn=self._load_users)
         self.assignment_reply_content_loader: DataLoader[
-            int, Optional[AssignmentReplyContentModel]
-        ] = DataLoader(
-            load_fn=lambda ids: self._load_assignment_reply_contents(ids, db)
-        )
+            tuple[int, tuple[str, ...]], Optional[AssignmentReplyContentModel]
+        ] = DataLoader(load_fn=self._load_assignment_reply_contents)
 
     async def _load_assignments(
-        self, assignment_reply_ids: List[int], db: AsyncSession
+        self, keys: List[tuple[int, tuple[str, ...]]]
     ) -> List[Optional[AssignmentModel]]:
-        stmt = (
-            select(AssignmentModel)
-            .join(AssignmentReplyModel)
-            .where(AssignmentReplyModel.id.in_(assignment_reply_ids))
-        )
-        result = await db.execute(stmt)
-        replies = result.scalars().all()
-        reply_map = {reply.id: reply for reply in replies}
-        return [reply_map.get(reply_id) for reply_id in assignment_reply_ids]
+        try:
+            fields = keys[0][1]
+            assignment_reply_ids = [key[0] for key in keys]
+            column_dict = get_assignment_columns(list(fields))
+            if "assignment_reply_id" not in fields:
+                column_dict["assignment_reply_id"] = AssignmentReplyModel.id
+            stmt = select(*column_dict.values()).join(AssignmentReplyModel).where(AssignmentReplyModel.id.in_(assignment_reply_ids))  # type: ignore
+            result = await self.db.execute(stmt)  # type: ignore
+            replies = result.mappings().all()
+            return [AssignmentModel(**reply) for reply in replies]  # type: ignore
+        except Exception as e:
+            raise e
 
     async def _load_users(
-        self, assignment_reply_ids: List[int], db: AsyncSession
+        self, keys: List[tuple[int, tuple[str, ...]]]
     ) -> List[Optional[UserModel]]:
-        stmt = (
-            select(UserModel)
-            .join(AssignmentReplyModel)
-            .where(AssignmentReplyModel.id.in_(assignment_reply_ids))
-        )
-        result = await db.execute(stmt)
-        users = result.scalars().all()
-        user_map = {user.id: user for user in users}
-        return [user_map.get(reply_id) for reply_id in assignment_reply_ids]
+        try:
+            assignment_reply_ids = [key[0] for key in keys]
+            fields = keys[0][1]
+            column_dict = get_user_columns(list(fields))
+            if "assignment_reply_id" not in fields:
+                column_dict["assignment_reply_id"] = AssignmentReplyModel.id
+            stmt = select(*column_dict.values()).join(AssignmentReplyModel).where(AssignmentReplyModel.id.in_(assignment_reply_ids))  # type: ignore
+            result = await self.db.execute(stmt)  # type: ignore
+            users = result.mappings().all()
+            return [UserModel(**user) for user in users]  # type: ignore
+        except Exception as e:
+            raise e
 
     async def _load_assignment_reply_contents(
-        self, assignment_reply_ids: List[int], db: AsyncSession
+        self, keys: List[tuple[int, tuple[str, ...]]]
     ) -> List[Optional[AssignmentReplyContentModel]]:
-        stmt = select(AssignmentReplyContentModel).where(
-            AssignmentReplyContentModel.assignment_reply_id.in_(assignment_reply_ids)
-        )
-        result = await db.execute(stmt)
-        contents = result.scalars().all()
-        content_map = {content.assignment_reply_id: content for content in contents}
-        return [content_map.get(reply_id) for reply_id in assignment_reply_ids]
+        try:
+            fields = keys[0][1]
+            assignment_reply_ids = [key[0] for key in keys]
+            column_dict = get_assignment_reply_content_columns(list(fields))
+            if "assignment_reply_id" not in fields:
+                column_dict["assignment_reply_id"] = AssignmentReplyModel.id
+            stmt = select(*column_dict.values()).where(AssignmentReplyContentModel.assignment_reply_id.in_(assignment_reply_ids))  # type: ignore
+            result = await self.db.execute(stmt)  # type: ignore
+            contents = result.mappings().all()
+            return [AssignmentReplyContentModel(**content) for content in contents]  # type: ignore
+        except Exception as e:
+            raise e

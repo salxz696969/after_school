@@ -3,12 +3,7 @@ import strawberry
 from datetime import datetime
 from typing import TYPE_CHECKING, Annotated, List
 from app.core.context import Context
-from sqlalchemy import select
-from app.models.assignment_content_model import AssignmentContentModel
-from app.models.user_model import UserModel
-from app.models.subject_model import SubjectModel
-from app.models.class_model import ClassModel
-from app.models.assignment_reply_model import AssignmentReplyModel
+from app.utils import extract_fields
 
 if TYPE_CHECKING:
     from .user_type import UserType
@@ -28,112 +23,43 @@ class AssignmentType:
     updated_at: datetime | None = None
 
     @strawberry.field
-    async def user(self, info: strawberry.Info[Context]) -> Annotated[
+    def user(self, info: strawberry.Info[Context]) -> Annotated[
         "UserType",
         strawberry.lazy("app.graphql.types.user_type"),
     ]:
-        from app.graphql.types.user_type import UserType
-        db = info.context.db
-        stmt = select(UserModel).where(UserModel.id == self.user_id)
-        result = await db.execute(stmt)
-        user = result.scalars().first()
-        if user is None:
-            raise Exception("User not found")
-        return UserType(
-            id=user.id,
-            username=user.username,
-            email=user.email,
-            avatar_url=user.avatar_url,
-            class_id=user.class_id,
-            password=user.password,
-            created_at=user.created_at,
-            updated_at=user.updated_at,
-        )
+        fields = extract_fields(info)
+        return info.context.assignment_loader.user_loader.load((self.id, tuple(fields)))  # type: ignore
 
     @strawberry.field
-    async def subject(self, info: strawberry.Info[Context]) -> Annotated[
+    def subject(self, info: strawberry.Info[Context]) -> Annotated[
         "SubjectType",
         strawberry.lazy("app.graphql.types.subject_type"),
     ]:
-        from app.graphql.types.subject_type import SubjectType
-        db = info.context.db
-        stmt = select(SubjectModel).where(SubjectModel.id == self.subject_id)
-        result = await db.execute(stmt)
-        subject = result.scalars().first()
-        if subject is None:
-            raise Exception("Subject not found")
-        return SubjectType(
-            id=subject.id,
-            name=subject.name,
-            class_id=subject.class_id,
-            created_at=subject.created_at,
-            updated_at=subject.updated_at,
-        )
+        fields = extract_fields(info)
+        return info.context.assignment_loader.subject_loader.load((self.id, tuple(fields)))  # type: ignore
 
     @strawberry.field
-    async def class_model(self, info: strawberry.Info[Context]) -> Annotated[
+    def class_model(self, info: strawberry.Info[Context]) -> Annotated[
         "ClassType",
         strawberry.lazy("app.graphql.types.class_type"),
     ]:
-        db = info.context.db
-        stmt = select(ClassModel).where(ClassModel.id == self.class_id)
-        result = await db.execute(stmt)
-        class_model = result.scalars().first()
-        if class_model is None:
-            raise Exception("Class not found")
-        return ClassType(
-            id=class_model.id,
-            speciality=class_model.speciality,
-            created_at=class_model.created_at,
-            updated_at=class_model.updated_at,
-        )
+        fields = extract_fields(info)
+        return info.context.assignment_loader.class_loader.load((self.id, tuple(fields)))  # type: ignore
 
     @strawberry.field
-    async def replies(self, info: strawberry.Info[Context]) -> List[
+    def replies(self, info: strawberry.Info[Context]) -> List[
         Annotated[
             "AssignmentReplyType",
             strawberry.lazy("app.graphql.types.assignment_reply_type"),
         ]
     ]:
-        from app.graphql.types.assignment_reply_type import AssignmentReplyType
-        db = info.context.db
-        stmt = select(AssignmentReplyModel).where(
-            AssignmentReplyModel.assignment_id == self.id
-        )
-        result = await db.execute(stmt)
-        replies = result.scalars().all()
-        return [
-            AssignmentReplyType(
-                id=reply.id,
-                assignment_id=reply.assignment_id,
-                user_id=reply.user_id,
-                up_vote=reply.up_vote,
-                down_vote=reply.down_vote,
-                created_at=reply.created_at,
-                updated_at=reply.updated_at,
-            )
-            for reply in replies
-        ]
+        fields = extract_fields(info)
+        return info.context.assignment_loader.replies_loader.load((self.id, tuple(fields)))  # type: ignore
 
     @strawberry.field
-    async def content(self, info: strawberry.Info[Context]) -> Annotated[
+    def content(self, info: strawberry.Info[Context]) -> Annotated[
         "AssignmentContentType",
-        strawberry.lazy(
-            "app.graphql.types.assignment_content_type"
-        ),
+        strawberry.lazy("app.graphql.types.assignment_content_type"),
     ]:
-        from app.graphql.types.assignment_content_type import AssignmentContentType
-        db = info.context.db
-        stmt = select(AssignmentContentModel).where(
-            AssignmentContentModel.assignment_id == self.id
-        )
-        result = await db.execute(stmt)
-        content = result.scalars().first()
-        if content is None:
-            raise Exception("Assignment content not found")
-        return AssignmentContentType(
-            id=content.id,
-            assignment_id=content.assignment_id,
-            created_at=content.created_at,
-            updated_at=content.updated_at,
-        )
+        fields = extract_fields(info)
+        return info.context.assignment_loader.content_loader.load((self.id, tuple(fields)))  # type: ignore

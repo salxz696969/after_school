@@ -1,4 +1,4 @@
-from .announcement_model import AnnouncementModel, AnnouncementType
+from .announcement_model import AnnouncementModel, AnnouncementTypeStatus
 from .announcement_content_model import AnnouncementContentModel
 from .assignment_model import AssignmentModel
 from .assignment_content_model import AssignmentContentModel
@@ -32,6 +32,6 @@ __all__ = [
     "UserModel",
     "ScheduleModel",
     "ScheduleContentModel",
-    "AnnouncementType",
+    "AnnouncementTypeStatus",
     "ChatRoomType",
 ]

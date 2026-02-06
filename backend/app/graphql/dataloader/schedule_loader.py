@@ -6,37 +6,45 @@ from app.models.schedule_content_model import ScheduleContentModel
 from app.models.schedule_model import ScheduleModel
 from strawberry.dataloader import DataLoader
 
+from app.utils.get_column import get_chat_content_columns, get_class_columns
+
 
 class ScheduleLoader:
     def __init__(self, db: AsyncSession):
         self.db = db
-        self.class_loader: DataLoader[int, Optional[ClassModel]] = DataLoader(
-            load_fn=lambda ids: self._load_classes(ids, db)
-        )
-        self.content_loader: DataLoader[int, Optional[ScheduleContentModel]] = (
-            DataLoader(load_fn=lambda ids: self._load_contents(ids, db))
-        )
+        self.class_loader: DataLoader[
+            tuple[int, tuple[str, ...]], Optional[ClassModel]
+        ] = DataLoader(load_fn=self._load_classes)
+        self.content_loader: DataLoader[
+            tuple[int, tuple[str, ...]], Optional[ScheduleContentModel]
+        ] = DataLoader(load_fn=self._load_contents)
 
     async def _load_classes(
-        self, schedule_ids: List[int], db: AsyncSession
+        self, keys: List[tuple[int, tuple[str, ...]]]
     ) -> List[Optional[ClassModel]]:
-        stmt = (
-            select(ClassModel)
-            .join(ScheduleModel)
-            .where(ScheduleModel.id.in_(schedule_ids))
-        )
-        result = await db.execute(stmt)
-        classes = result.scalars().all()
-        class_map = {class_model.id: class_model for class_model in classes}
-        return [class_map.get(schedule_id) for schedule_id in schedule_ids]
+        try:
+            schedule_ids = [key[0] for key in keys]
+            fields = keys[0][1]
+            column_dict = get_class_columns(list(fields))
+            stmt = select(*column_dict.values()).join(ScheduleModel).where(ScheduleModel.id.in_(schedule_ids))  # type: ignore
+            result = await self.db.execute(stmt)  # type: ignore
+            classes = result.mappings().all()
+            return [ClassModel(**cls) for cls in classes]  # type: ignore
+        except Exception as e:
+            raise e
 
     async def _load_contents(
-        self, schedule_ids: List[int], db: AsyncSession
+        self, keys: List[tuple[int, tuple[str, ...]]]
     ) -> List[Optional[ScheduleContentModel]]:
-        stmt = select(ScheduleContentModel).where(
-            ScheduleContentModel.schedule_id.in_(schedule_ids)
-        )
-        result = await db.execute(stmt)
-        contents = result.scalars().all()
-        content_map = {content.schedule_id: content for content in contents}
-        return [content_map.get(schedule_id) for schedule_id in schedule_ids]
+        try:
+            schedule_ids = [key[0] for key in keys]
+            fields = keys[0][1]
+            column_dict = get_chat_content_columns(list(fields))
+            if "schedule_id" not in fields:
+                column_dict["schedule_id"] = ScheduleContentModel.id
+            stmt = select(*column_dict.values()).where(ScheduleContentModel.schedule_id.in_(schedule_ids)) # type: ignore
+            result = await self.db.execute(stmt) # type: ignore
+            contents = result.mappings().all()
+            return [ScheduleContentModel(**content) for content in contents] # type: ignore
+        except Exception as e:
+            raise e

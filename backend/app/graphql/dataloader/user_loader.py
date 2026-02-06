@@ -10,106 +10,159 @@ from app.models.class_model import ClassModel
 from app.models.user_model import UserModel
 from strawberry.dataloader import DataLoader
 
+from app.utils.get_column import (
+    get_announcement_columns,
+    get_assignment_columns,
+    get_assignment_reply_columns,
+    get_chat_columns,
+    get_chat_room_member_columns,
+    get_class_columns,
+)
+
 
 class UserLoader:
     def __init__(self, db: AsyncSession):
         self.db = db
-        self.class_loader: DataLoader[int, Optional[ClassModel]] = DataLoader(
-            load_fn=lambda ids: self._load_classes(ids, db)
-        )
-        self.assignment_loader: DataLoader[int, Optional[List[AssignmentModel]]] = (
-            DataLoader(load_fn=lambda ids: self._load_assignments(ids, db))
-        )
+        self.class_loader: DataLoader[
+            tuple[int, tuple[str, ...]], Optional[ClassModel]
+        ] = DataLoader(load_fn=self._load_classes)
+        self.assignment_loader: DataLoader[
+            tuple[int, tuple[str, ...]], Optional[List[AssignmentModel]]
+        ] = DataLoader(load_fn=self._load_assignments)
         self.assignment_reply_loader: DataLoader[
-            int, Optional[List[AssignmentReplyModel]]
-        ] = DataLoader(load_fn=lambda ids: self._load_assignment_replies(ids, db))
-        self.announcement_loader: DataLoader[int, Optional[List[AnnouncementModel]]] = (
-            DataLoader(load_fn=lambda ids: self._load_announcements(ids, db))
-        )
-        self.chat_loader: DataLoader[int, Optional[List[ChatModel]]] = DataLoader(
-            load_fn=lambda ids: self._load_chats(ids, db)
-        )
+            tuple[int, tuple[str, ...]], Optional[List[AssignmentReplyModel]]
+        ] = DataLoader(load_fn=self._load_assignment_replies)
+        self.announcement_loader: DataLoader[
+            tuple[int, tuple[str, ...]], Optional[List[AnnouncementModel]]
+        ] = DataLoader(load_fn=self._load_announcements)
+        self.chat_loader: DataLoader[
+            tuple[int, tuple[str, ...]], Optional[List[ChatModel]]
+        ] = DataLoader(load_fn=self._load_chats)
         self.chat_room_member_loader: DataLoader[
-            int, Optional[List[ChatRoomMemberModel]]
-        ] = DataLoader(load_fn=lambda ids: self._load_chat_room_members(ids, db))
+            tuple[int, tuple[str, ...]], Optional[List[ChatRoomMemberModel]]
+        ] = DataLoader(load_fn=self._load_chat_room_members)
 
     async def _load_classes(
-        self, user_ids: List[int], db: AsyncSession
+        self, keys: List[tuple[int, tuple[str, ...]]]
     ) -> List[Optional[ClassModel]]:
-        stmt = select(ClassModel).join(UserModel).where(UserModel.id.in_(user_ids))
-        result = await db.execute(stmt)
-        classes = result.scalars().all()
-        class_map = {class_model.id: class_model for class_model in classes}
-        return [class_map.get(user_id) for user_id in user_ids]
+        try:
+            user_ids = [key[0] for key in keys]
+            fields = keys[0][1]
+            column_dict = get_class_columns(list(fields))
+            stmt = select(*column_dict.values()).join(UserModel).where(UserModel.id.in_(user_ids))  # type: ignore
+            result = await self.db.execute(stmt)  # type: ignore
+            classes = result.mappings().all()
+            return [ClassModel(**cls) for cls in classes]  # type: ignore
+        except Exception as e:
+            raise e
 
     async def _load_assignments(
-        self, user_ids: List[int], db: AsyncSession
+        self, keys: List[tuple[int, tuple[str, ...]]]
     ) -> List[Optional[List[AssignmentModel]]]:
-        stmt = select(AssignmentModel).where(AssignmentModel.user_id.in_(user_ids))
-        result = await db.execute(stmt)
-        assignments = result.scalars().all()
-        assignment_map: dict[int, List[AssignmentModel]] = {
-            user_id: [] for user_id in user_ids
-        }
-        for assignment in assignments:
-            if assignment.user_id is not None:
-                assignment_map[assignment.user_id].append(assignment)
-        return [assignment_map.get(user_id, []) for user_id in user_ids]
+        try:
+            user_ids = [key[0] for key in keys]
+            fields = keys[0][1]
+            column_dict = get_assignment_columns(list(fields))
+            if "user_id" not in fields:
+                column_dict["user_id"] = UserModel.id
+            stmt = select(*column_dict.values()).where(AssignmentModel.user_id.in_(user_ids))  # type: ignore
+            result = await self.db.execute(stmt)  # type: ignore
+            assignments = result.mappings().all()
+            return [
+                [
+                    AssignmentModel(**assignment)
+                    for assignment in assignments
+                    if assignment["user_id"] == user_id
+                ]
+                for user_id in user_ids
+            ]
+        except Exception as e:
+            raise e
 
     async def _load_assignment_replies(
-        self, user_ids: List[int], db: AsyncSession
+        self, keys: List[tuple[int, tuple[str, ...]]]
     ) -> List[Optional[List[AssignmentReplyModel]]]:
-        stmt = select(AssignmentReplyModel).where(
-            AssignmentReplyModel.user_id.in_(user_ids)
-        )
-        result = await db.execute(stmt)
-        replies = result.scalars().all()
-        reply_map: dict[int, List[AssignmentReplyModel]] = {
-            user_id: [] for user_id in user_ids
-        }
-        for reply in replies:
-            if reply.user_id is not None:
-                reply_map[reply.user_id].append(reply)
-        return [reply_map.get(user_id, []) for user_id in user_ids]
+        try:
+            user_ids = [key[0] for key in keys]
+            fields = keys[0][1]
+            column_dict = get_assignment_reply_columns(list(fields))
+            if "user" not in fields:
+                column_dict["assignment_reply_id"] = UserModel.id
+            stmt = select(*column_dict.values()).where(AssignmentReplyModel.user_id.in_(user_ids))  # type: ignore
+            result = await self.db.execute(stmt)  # type: ignore
+            replies = result.mappings().all()
+            return [
+                [
+                    AssignmentReplyModel(**reply)
+                    for reply in replies
+                    if reply["user_id"] == user_id
+                ]
+                for user_id in user_ids
+            ]
+        except Exception as e:
+            raise e
 
     async def _load_announcements(
-        self, user_ids: List[int], db: AsyncSession
+        self, keys: List[tuple[int, tuple[str, ...]]]
     ) -> List[Optional[List[AnnouncementModel]]]:
-        stmt = select(AnnouncementModel).where(AnnouncementModel.user_id.in_(user_ids))
-        result = await db.execute(stmt)
-        announcements = result.scalars().all()
-        announcement_map: dict[int, List[AnnouncementModel]] = {
-            user_id: [] for user_id in user_ids
-        }
-        for announcement in announcements:
-            if announcement.user_id is not None:
-                announcement_map[announcement.user_id].append(announcement)
-        return [announcement_map.get(user_id, []) for user_id in user_ids]
+        try:
+            user_ids = [key[0] for key in keys]
+            fields = keys[0][1]
+            column_dict = get_announcement_columns(list(fields))
+            if "user_id" not in fields:
+                column_dict["user_id"] = UserModel.id
+            stmt = select(*column_dict.values()).where(AnnouncementModel.user_id.in_(user_ids))  # type: ignore
+            result = await self.db.execute(stmt)  # type: ignore
+            announcements = result.mappings().all()
+            return [
+                [
+                    AnnouncementModel(**announcement)
+                    for announcement in announcements
+                    if announcement["user_id"] == user_id
+                ]
+                for user_id in user_ids
+            ]
+        except Exception as e:
+            raise e
 
     async def _load_chats(
-        self, user_ids: List[int], db: AsyncSession
+        self, keys: List[tuple[int, tuple[str, ...]]]
     ) -> List[Optional[List[ChatModel]]]:
-        stmt = select(ChatModel).where(ChatModel.user_id.in_(user_ids))
-        result = await db.execute(stmt)
-        chats = result.scalars().all()
-        chat_map: dict[int, List[ChatModel]] = {user_id: [] for user_id in user_ids}
-        for chat in chats:
-            if chat.user_id is not None:
-                chat_map[chat.user_id].append(chat)
-        return [chat_map.get(user_id, []) for user_id in user_ids]
+        try:
+            user_ids = [key[0] for key in keys]
+            fields = keys[0][1]
+            column_dict = get_chat_columns(list(fields))
+            if "user_id" not in fields:
+                column_dict["user_id"] = UserModel.id
+            stmt = select(*column_dict.values()).where(ChatModel.user_id.in_(user_ids))  # type: ignore
+            result = await self.db.execute(stmt)  # type: ignore
+            chats = result.mappings().all()
+            return [
+                [ChatModel(**chat) for chat in chats if chat["user_id"] == user_id]
+                for user_id in user_ids
+            ]
+        except Exception as e:
+            raise e
 
     async def _load_chat_room_members(
-        self, user_ids: List[int], db: AsyncSession
+        self, keys: List[tuple[int, tuple[str, ...]]]
     ) -> List[Optional[List[ChatRoomMemberModel]]]:
-        stmt = select(ChatRoomMemberModel).where(
-            ChatRoomMemberModel.user_id.in_(user_ids)
-        )
-        result = await db.execute(stmt)
-        members = result.scalars().all()
-        member_map: dict[int, List[ChatRoomMemberModel]] = {
-            user_id: [] for user_id in user_ids
-        }
-        for member in members:
-            if member.user_id is not None:
-                member_map[member.user_id].append(member)
-        return [member_map.get(user_id, []) for user_id in user_ids]
+        try:
+            user_ids = [key[0] for key in keys]
+            fields = keys[0][1]
+            column_dict = get_chat_room_member_columns(list(fields))
+            if "user_id" not in fields:
+                column_dict["user_id"] = UserModel.id
+            stmt = select(*column_dict.values()).where(ChatRoomMemberModel.user_id.in_(user_ids))  # type: ignore
+            result = await self.db.execute(stmt)  # type: ignore
+            members = result.mappings().all()
+            return [
+                [
+                    ChatRoomMemberModel(**member)
+                    for member in members
+                    if member["user_id"] == user_id
+                ]
+                for user_id in user_ids
+            ]
+        except Exception as e:
+            raise e

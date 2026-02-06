@@ -4,9 +4,7 @@ import strawberry
 from datetime import datetime
 from typing import TYPE_CHECKING, List, Annotated
 from app.core.context import Context
-from sqlalchemy import select
-from app.models.chat_model import ChatModel
-from app.models.chat_room_member_model import ChatRoomMemberModel
+from app.utils import extract_fields
 
 if TYPE_CHECKING:
     from .chat_type import ChatType
@@ -29,49 +27,21 @@ class ChatRoomType:
     updated_at: datetime | None = None
 
     @strawberry.field
-    async def chats(self, info: strawberry.Info[Context]) -> List[
+    def chats(self, info: strawberry.Info[Context]) -> List[
         Annotated[
             "ChatType",
             strawberry.lazy("app.graphql.types.chat_type"),
         ]
     ]:
-        from app.graphql.types.chat_type import ChatType
-        db = info.context.db
-        stmt = select(ChatModel).where(ChatModel.chat_room_id == self.id)
-        result = await db.execute(stmt)
-        chats = result.scalars().all()
-        return [
-            ChatType(
-                id=chat.id,
-                chat_room_id=chat.chat_room_id,
-                user_id=chat.user_id,
-                created_at=chat.created_at,
-                updated_at=chat.updated_at,
-            )
-            for chat in chats
-        ]
+        fields = extract_fields(info)
+        return info.context.chat_room_loader.chats_loader.load((self.id, tuple(fields)))  # type: ignore
 
     @strawberry.field
-    async def members(self, info: strawberry.Info[Context]) -> List[
+    def members(self, info: strawberry.Info[Context]) -> List[
         Annotated[
             "ChatRoomMemberType",
             strawberry.lazy("app.graphql.types.chat_room_member_type"),
         ]
     ]:
-        from app.graphql.types.chat_room_member_type import ChatRoomMemberType
-        db = info.context.db
-        stmt = select(ChatRoomMemberModel).where(
-            ChatRoomMemberModel.chat_room_id == self.id
-        )
-        result = await db.execute(stmt)
-        members = result.scalars().all()
-        return [
-            ChatRoomMemberType(
-                id=member.id,
-                chat_room_id=member.chat_room_id,
-                user_id=member.user_id,
-                created_at=member.created_at,
-                updated_at=member.updated_at,
-            )
-            for member in members
-        ]
+        fields = extract_fields(info)
+        return info.context.chat_room_loader.members_loader.load((self.id, tuple(fields)))  # type: ignore

@@ -16,7 +16,6 @@ class AssignmentReplyModel(Base):
     __tablename__ = "assignment_replies"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    text: Mapped[str] = mapped_column(nullable=True)
     assignment_id: Mapped[int | None] = mapped_column(
         ForeignKey("assignments.id", ondelete="set null"), nullable=True
     )

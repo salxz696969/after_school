@@ -6,39 +6,50 @@ from app.models.chat_room_model import ChatRoomModel
 from app.models.user_model import UserModel
 from strawberry.dataloader import DataLoader
 
+from app.utils.get_column import (
+    get_chat_room_columns,
+    get_user_columns,
+)
+
 
 class ChatRoomMemberLoader:
     def __init__(self, db: AsyncSession):
         self.db = db
-        self.chat_room_loader: DataLoader[int, Optional[ChatRoomModel]] = DataLoader(
-            load_fn=lambda ids: self._load_chat_rooms(ids, db)
-        )
-        self.user_loader: DataLoader[int, Optional[UserModel]] = DataLoader(
-            load_fn=lambda ids: self._load_users(ids, db)
-        )
+        self.chat_room_loader: DataLoader[
+            tuple[int, tuple[str, ...]], Optional[ChatRoomModel]
+        ] = DataLoader(load_fn=self._load_chat_rooms)
+        self.user_loader: DataLoader[
+            tuple[int, tuple[str, ...]], Optional[UserModel]
+        ] = DataLoader(load_fn=self._load_users)
 
     async def _load_chat_rooms(
-        self, member_ids: List[int], db: AsyncSession
+        self, keys: List[tuple[int, tuple[str, ...]]]
     ) -> List[Optional[ChatRoomModel]]:
-        stmt = (
-            select(ChatRoomModel)
-            .join(ChatRoomMemberModel)
-            .where(ChatRoomMemberModel.id.in_(member_ids))
-        )
-        result = await db.execute(stmt)
-        chat_rooms = result.scalars().all()
-        chat_room_map = {chat_room.id: chat_room for chat_room in chat_rooms}
-        return [chat_room_map.get(member_id) for member_id in member_ids]
+        try:
+            member_ids = [key[0] for key in keys]
+            fields = keys[0][1]
+            column_dict = get_chat_room_columns(list(fields))
+            if "chat_room_member_id" not in fields:
+                column_dict["chat_room_member_id"] = ChatRoomMemberModel.id
+            stmt = select(*column_dict.values()).join(ChatRoomMemberModel).where(ChatRoomMemberModel.id.in_(member_ids))  # type: ignore
+            result = await self.db.execute(stmt)  # type: ignore
+            chat_rooms = result.mappings().all()
+            return [ChatRoomModel(**chat_room) for chat_room in chat_rooms]  # type: ignore
+        except Exception as e:
+            raise e
 
     async def _load_users(
-        self, member_ids: List[int], db: AsyncSession
+        self, keys: List[tuple[int, tuple[str, ...]]]
     ) -> List[Optional[UserModel]]:
-        stmt = (
-            select(UserModel)
-            .join(ChatRoomMemberModel)
-            .where(ChatRoomMemberModel.id.in_(member_ids))
-        )
-        result = await db.execute(stmt)
-        users = result.scalars().all()
-        user_map = {user.id: user for user in users}
-        return [user_map.get(member_id) for member_id in member_ids]
+        try:
+            member_ids = [key[0] for key in keys]
+            fields = keys[0][1]
+            column_dict = get_user_columns(list(fields))
+            if "chat_room_member_id" not in fields:
+                column_dict["chat_room_member_id"] = ChatRoomMemberModel.id
+            stmt = select(*column_dict.values()).join(ChatRoomMemberModel).where(ChatRoomMemberModel.id.in_(member_ids))  # type: ignore
+            result = await self.db.execute(stmt)  # type: ignore
+            users = result.mappings().all()
+            return [UserModel(**user) for user in users]  # type: ignore
+        except Exception as e:
+            raise e
